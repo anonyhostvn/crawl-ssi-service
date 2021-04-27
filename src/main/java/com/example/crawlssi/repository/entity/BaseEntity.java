@@ -17,13 +17,14 @@ public class BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 15949425370209050L;
 
+    @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "CREATED_TIME", updatable = false)
+    @Column(name = "CREATED_DATE", updatable = false)
     private Date createdTime;
 
     @Basic
@@ -32,17 +33,17 @@ public class BaseEntity implements Serializable {
 
     @Basic
     @UpdateTimestamp
-    @Column(name = "LAST_UPDATED_TIME")
+    @Column(name = "MODIFIED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastUpdatedTime;
 
     @Basic
-    @Column(name = "LAST_UPDATED_ID")
+    @Column(name = "MODIFIED_ID")
     private Long lastUpdatedId;
 
     @Basic
-    @Column(name = "IS_ACTIVED")
-    private Boolean isActived = true;
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @Basic
     @Column(name = "IS_DELETED")
