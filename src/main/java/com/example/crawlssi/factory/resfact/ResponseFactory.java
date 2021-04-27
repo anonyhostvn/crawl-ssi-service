@@ -12,6 +12,13 @@ public class ResponseFactory {
         return ResponseEntity.ok(generalResponse);
     }
 
+
+    public static ResponseEntity<GeneralResponse<Object>> success(GeneralResponseStatus generalResponseStatus) {
+        GeneralResponse<Object> responseObject = new GeneralResponse<>();
+        responseObject.setStatus(generalResponseStatus);
+        return ResponseEntity.ok(responseObject);
+    }
+
     public static <T> ResponseEntity<GeneralResponse<T>> success(GeneralResponse<T> responseObject) {
         return ResponseEntity.ok(responseObject);
     }
