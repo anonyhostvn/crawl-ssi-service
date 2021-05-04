@@ -34,4 +34,10 @@ public class CrawlController {
             return ResponseFactory.success();
         return ResponseFactory.success(new GeneralResponseStatus(ResponseStatusEnum.UNKNOWN_ERROR));
     }
+    @GetMapping("/crawl-company-profile")
+    public ResponseEntity<GeneralResponse<Object>> getCompanyProfileControl() {
+        crawlSsiService.crawlCompanyProfile();
+        return ResponseFactory.success();
+    }
+
 }

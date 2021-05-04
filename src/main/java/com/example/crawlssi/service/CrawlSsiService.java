@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 @Service
 public interface CrawlSsiService {
 
-    Boolean crawlAllStock();
+    boolean crawlAllStock();
+
+    void crawlCompanyProfile();
 
 }
