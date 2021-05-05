@@ -4,11 +4,16 @@ import com.example.crawlssi.exceptions.CustomBusinessLogicException;
 import com.example.crawlssi.factory.resfact.ResponseStatusEnum;
 import com.example.crawlssi.outgate.ssi.SsiClient;
 import com.example.crawlssi.outgate.ssi.request.CompanyProfileReqModel;
+import com.example.crawlssi.outgate.ssi.request.NewsReqModel;
 import com.example.crawlssi.outgate.ssi.response.CompanyProfileResp;
+import com.example.crawlssi.outgate.ssi.response.NewsModel;
+import com.example.crawlssi.outgate.ssi.response.NewsResp;
 import com.example.crawlssi.outgate.ssi.response.SingleStockModel;
 import com.example.crawlssi.repository.CompanyProfileRepository;
+import com.example.crawlssi.repository.NewsRepository;
 import com.example.crawlssi.repository.TradingExchangeRepository;
 import com.example.crawlssi.repository.entity.CompanyProfile;
+import com.example.crawlssi.repository.entity.News;
 import com.example.crawlssi.repository.entity.TradingExchange;
 import com.example.crawlssi.service.CrawlSsiService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +21,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,19 +30,24 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class CrawlSsiServiceImpl implements CrawlSsiService {
 
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
     private final SsiClient ssiClient;
     private final TradingExchangeRepository tradingExchangeRepository;
     private final CompanyProfileRepository companyProfileRepository;
+    private final NewsRepository newsRepository;
 
     @Autowired
     public CrawlSsiServiceImpl(
             SsiClient ssiClient,
             TradingExchangeRepository tradingExchangeRepository,
-            CompanyProfileRepository companyProfileRepository
+            CompanyProfileRepository companyProfileRepository,
+            NewsRepository newsRepository
     ) {
         this.tradingExchangeRepository = tradingExchangeRepository;
         this.companyProfileRepository = companyProfileRepository;
         this.ssiClient = ssiClient;
+        this.newsRepository = newsRepository;
     }
 
     private boolean isTradingExExist(String exchangeCode) {
@@ -103,5 +115,43 @@ public class CrawlSsiServiceImpl implements CrawlSsiService {
     public void crawlCompanyProfile() {
         List<SingleStockModel> listSingleStock = ssiClient.getAllStock().getData();
         listSingleStock.parallelStream().forEach(item -> crawlAndSaveCompanyProfile(item.getCode()));
+    }
+
+    private void saveNewsToDb(NewsModel newsModel) {
+        News news = new News();
+        BeanUtils.copyProperties(newsModel, news);
+        if (news.getFullContent().length() > 900)
+            news.setFullContent(news.getFullContent().substring(0,500));
+
+        try {
+            newsRepository.save(news);
+        } catch (Exception e) {
+            log.info("Failed to save news to DB --> {} -{}", e.getMessage(), e.getCause());
+        }
+    }
+
+    private void crawlAndSaveNews(String symbol) {
+        NewsReqModel newsReqModel = new NewsReqModel();
+        newsReqModel.setSymbol(symbol);
+        try {
+            newsReqModel.setFromDate("01/01/1970");
+            newsReqModel.setToDate(simpleDateFormat.format(new Date(System.currentTimeMillis())));
+        } catch (Exception e) {
+            log.info("Error when convert String to Object");
+        }
+        newsReqModel.setOffset(1);
+        newsReqModel.setSize(1000000);
+
+        NewsResp newsResp = ssiClient.getAllNews(newsReqModel);
+
+        newsResp.getData().getNews().getDataList().forEach(this::saveNewsToDb);
+    }
+
+    @Override
+    public void crawlNews() {
+        CompletableFuture.runAsync(() -> {
+            List<SingleStockModel> listSingleStock = ssiClient.getAllStock().getData();
+            listSingleStock.forEach(item -> crawlAndSaveNews(item.getCode()));
+        });
     }
 }

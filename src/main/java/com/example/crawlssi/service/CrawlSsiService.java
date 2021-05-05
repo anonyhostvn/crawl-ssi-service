@@ -9,4 +9,6 @@ public interface CrawlSsiService {
 
     void crawlCompanyProfile();
 
+    void crawlNews();
+
 }
