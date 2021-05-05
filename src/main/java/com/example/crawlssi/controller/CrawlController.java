@@ -6,6 +6,7 @@ import com.example.crawlssi.factory.resfact.GeneralResponseStatus;
 import com.example.crawlssi.factory.resfact.ResponseFactory;
 import com.example.crawlssi.factory.resfact.ResponseStatusEnum;
 import com.example.crawlssi.service.CrawlSsiService;
+import com.example.crawlssi.service.SubCrawlSsiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -22,10 +23,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class CrawlController {
 
     private final CrawlSsiService crawlSsiService;
+    private final SubCrawlSsiService subCrawlSsiService;
 
     @Autowired
-    public CrawlController(CrawlSsiService crawlSsiService) {
+    public CrawlController(
+            CrawlSsiService crawlSsiService,
+            SubCrawlSsiService subCrawlSsiService
+    ) {
         this.crawlSsiService = crawlSsiService;
+        this.subCrawlSsiService = subCrawlSsiService;
     }
 
     @GetMapping("/crawl-trading-exchange")
@@ -36,14 +42,20 @@ public class CrawlController {
     }
 
     @GetMapping("/crawl-company-profile")
-    public ResponseEntity<GeneralResponse<Object>> getCompanyProfileControl() {
+    public ResponseEntity<GeneralResponse<Object>> crawlCompanyProfileControl() {
         crawlSsiService.crawlCompanyProfile();
         return ResponseFactory.success();
     }
 
     @GetMapping("/crawl-news")
-    public ResponseEntity<GeneralResponse<Object>> getNewsControl() {
+    public ResponseEntity<GeneralResponse<Object>> crawlNewsControl() {
         crawlSsiService.crawlNews();
+        return ResponseFactory.success();
+    }
+
+    @GetMapping("/crawl-finance-indicator")
+    public ResponseEntity<GeneralResponse<Object>> crawlFinanceIndicator() {
+        subCrawlSsiService.crawlCompanyFinance();
         return ResponseFactory.success();
     }
 

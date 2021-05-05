@@ -1,11 +1,9 @@
 package com.example.crawlssi.outgate.ssi;
 
+import com.example.crawlssi.outgate.ssi.request.CompanyFinanceReqModel;
 import com.example.crawlssi.outgate.ssi.request.CompanyProfileReqModel;
 import com.example.crawlssi.outgate.ssi.request.NewsReqModel;
-import com.example.crawlssi.outgate.ssi.response.CompanyProfileResp;
-import com.example.crawlssi.outgate.ssi.response.ListLikeResp;
-import com.example.crawlssi.outgate.ssi.response.NewsResp;
-import com.example.crawlssi.outgate.ssi.response.SingleStockModel;
+import com.example.crawlssi.outgate.ssi.response.*;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +23,11 @@ public interface SsiClient {
     @PostMapping("${url.ssi.endpoint.news}")
     NewsResp getAllNews(
             @RequestBody NewsReqModel newsReqModel
+    );
+
+    @PostMapping("${url.ssi.endpoint.companyfinance}")
+    CompanyFinanceResp getCompanyFinance(
+            @RequestBody CompanyFinanceReqModel companyFinanceReqModel
     );
 
 }

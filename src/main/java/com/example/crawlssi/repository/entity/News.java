@@ -31,25 +31,25 @@ public class News implements Serializable {
     @Column(name = "SYMBOL", unique = true)
     private String symbol;
 
-    @Column(name = "TITLE", unique = true)
+    @Column(name = "TITLE")
     private String title;
 
-    @Column(name = "IMAGE_URL", unique = true)
+    @Column(name = "IMAGE_URL")
     private String imageUrl;
 
-    @Column(name = "SHORT_CONTENT", unique = true)
+    @Column(name = "SHORT_CONTENT")
     private String shortContent;
 
-    @Column(name = "FULL_CONTENT", unique = true)
+    @Column(name = "FULL_CONTENT")
     private String fullContent;
 
-    @Column(name = "NEWS_SOURCE", unique = true)
+    @Column(name = "NEWS_SOURCE")
     private String newsSource;
 
-    @Column(name = "SOURCE_CODE", unique = true)
+    @Column(name = "SOURCE_CODE")
     private String sourceCode;
 
-    @Column(name = "NEWS_SOURCE_LINK", unique = true)
+    @Column(name = "NEWS_SOURCE_LINK")
     private String newsSourceLink;
 
 }
