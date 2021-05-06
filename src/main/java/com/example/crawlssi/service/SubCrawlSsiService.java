@@ -7,4 +7,6 @@ public interface SubCrawlSsiService {
 
     void crawlCompanyFinance();
 
+    void crawlStockDailyFromSsiGraph();
+
 }

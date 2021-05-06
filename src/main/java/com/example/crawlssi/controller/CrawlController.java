@@ -59,4 +59,10 @@ public class CrawlController {
         return ResponseFactory.success();
     }
 
+    @GetMapping("/crawl-daily-stock")
+    public ResponseEntity<GeneralResponse<Object>> crawlDailyStockPrice() {
+        subCrawlSsiService.crawlStockDailyFromSsiGraph();
+        return ResponseFactory.success();
+    }
+
 }
