@@ -9,4 +9,6 @@ public interface SubCrawlSsiService {
 
     void crawlStockDailyFromSsiGraph();
 
+    void crawlShareHolder();
+
 }

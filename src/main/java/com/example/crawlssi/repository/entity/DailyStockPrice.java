@@ -29,6 +29,8 @@ public class DailyStockPrice implements Serializable {
     @Column(name = "exchange")
     private String exchange;
 
+    @Column(name = "STOCKSYMBOl")
+    private String symbol;
 
     @Column(name = "tradingdate")
     private Date tradingDate;

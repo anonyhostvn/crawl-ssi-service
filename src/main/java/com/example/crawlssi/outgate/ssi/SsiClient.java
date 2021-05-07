@@ -3,6 +3,7 @@ package com.example.crawlssi.outgate.ssi;
 import com.example.crawlssi.outgate.ssi.request.CompanyFinanceReqModel;
 import com.example.crawlssi.outgate.ssi.request.CompanyProfileReqModel;
 import com.example.crawlssi.outgate.ssi.request.NewsReqModel;
+import com.example.crawlssi.outgate.ssi.request.ShareHolderReqModel;
 import com.example.crawlssi.outgate.ssi.response.*;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,11 @@ public interface SsiClient {
     @PostMapping("${url.ssi.endpoint.companyfinance}")
     CompanyFinanceResp getCompanyFinance(
             @RequestBody CompanyFinanceReqModel companyFinanceReqModel
+    );
+
+    @PostMapping("${url.ssi.endpoint.shareholder}")
+    ShareHolderResp getShareHolder(
+            @RequestBody ShareHolderReqModel shareHolderReqModel
     );
 
 }

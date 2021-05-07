@@ -65,4 +65,10 @@ public class CrawlController {
         return ResponseFactory.success();
     }
 
+    @GetMapping("/crawl-shareholder")
+    public ResponseEntity<GeneralResponse<Object>> crawlShareHolder() {
+        subCrawlSsiService.crawlShareHolder();
+        return ResponseFactory.success();
+    }
+
 }

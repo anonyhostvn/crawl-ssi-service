@@ -2,17 +2,18 @@ package com.example.crawlssi.service.impl;
 
 import com.example.crawlssi.outgate.ssi.SsiClient;
 import com.example.crawlssi.outgate.ssi.request.CompanyFinanceReqModel;
-import com.example.crawlssi.outgate.ssi.response.CompanyFinanceModel;
-import com.example.crawlssi.outgate.ssi.response.CompanyFinanceResp;
-import com.example.crawlssi.outgate.ssi.response.SingleStockModel;
+import com.example.crawlssi.outgate.ssi.request.ShareHolderReqModel;
+import com.example.crawlssi.outgate.ssi.response.*;
 import com.example.crawlssi.outgate.ssigraph.SsiGraphClient;
 import com.example.crawlssi.outgate.ssigraph.request.DailyStockReqModel;
 import com.example.crawlssi.outgate.ssigraph.response.DailyStockPriceModel;
 import com.example.crawlssi.outgate.ssigraph.response.DailyStockResp;
 import com.example.crawlssi.repository.DailyStockPriceRepository;
 import com.example.crawlssi.repository.FinanceIndicatorRepository;
+import com.example.crawlssi.repository.ShareHolderRepository;
 import com.example.crawlssi.repository.entity.DailyStockPrice;
 import com.example.crawlssi.repository.entity.FinanceIndicator;
+import com.example.crawlssi.repository.entity.ShareHolder;
 import com.example.crawlssi.service.SubCrawlSsiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -34,18 +35,21 @@ public class SubCrawlSsiServiceImpl implements SubCrawlSsiService {
     private final FinanceIndicatorRepository financeIndicatorRepository;
     private final SsiGraphClient ssiGraphClient;
     private final DailyStockPriceRepository dailyStockPriceRepository;
+    private final ShareHolderRepository shareHolderRepository;
 
     @Autowired
     public SubCrawlSsiServiceImpl(
             SsiClient ssiClient,
             FinanceIndicatorRepository financeIndicatorRepository,
             SsiGraphClient ssiGraphClient,
-            DailyStockPriceRepository dailyStockPriceRepository
+            DailyStockPriceRepository dailyStockPriceRepository,
+            ShareHolderRepository shareHolderRepository
     ) {
         this.financeIndicatorRepository = financeIndicatorRepository;
         this.ssiClient = ssiClient;
         this.ssiGraphClient = ssiGraphClient;
         this.dailyStockPriceRepository = dailyStockPriceRepository;
+        this.shareHolderRepository = shareHolderRepository;
     }
 
     private void saveCompanyFinanceIndicatorToDb(String symbol, CompanyFinanceModel companyFinanceModel) {
@@ -84,11 +88,13 @@ public class SubCrawlSsiServiceImpl implements SubCrawlSsiService {
         });
     }
 
-    private void saveDailyStockToDb(DailyStockPriceModel dailyStockPriceModel) {
+    private void saveDailyStockToDb(String symbol, DailyStockPriceModel dailyStockPriceModel) {
         DailyStockPrice dailyStockPrice = new DailyStockPrice();
         BeanUtils.copyProperties(dailyStockPriceModel, dailyStockPrice);
+        dailyStockPrice.setSymbol(symbol);
         try {
             dailyStockPriceRepository.save(dailyStockPrice);
+            log.info("Save a price of {} in {}", symbol, dailyStockPrice.getTradingDate());
         } catch ( Exception e) {
             log.info("Failed to save dailyStockPrice to DB --> {} - {}", e.getMessage(), e.getCause());
         }
@@ -105,7 +111,7 @@ public class SubCrawlSsiServiceImpl implements SubCrawlSsiService {
 
         try {
             DailyStockResp dailyStockResp = ssiGraphClient.getDailyStockData(dailyStockReqModel);
-            dailyStockResp.getData().getStockPrice().getDataList().forEach(this::saveDailyStockToDb);
+            dailyStockResp.getData().getStockPrice().getDataList().forEach(item -> saveDailyStockToDb(symbol, item));
         } catch (Exception e) {
             log.info("Error to crawl daily stock --> {} - {}", e.getMessage(), e.getCause());
         }
@@ -117,6 +123,40 @@ public class SubCrawlSsiServiceImpl implements SubCrawlSsiService {
         CompletableFuture.runAsync(() -> {
             List<SingleStockModel> listSingleStock = ssiClient.getAllStock().getData();
             listSingleStock.forEach(item -> crawlAndSaveFromSsiGraph(item.getCode()));
+        });
+    }
+
+    private void saveShareHolderToDb(String symbol, ShareHolderModel shareHolderModel) {
+        ShareHolder shareHolder = new ShareHolder();
+        BeanUtils.copyProperties(shareHolderModel, shareHolder);
+        shareHolder.setSymbol(symbol);
+
+        try {
+            shareHolderRepository.save(shareHolder);
+        } catch (Exception e) {
+            log.info("Failed to save shareholder to db {} , {} - {}", shareHolder, e.getMessage(), e.getCause());
+        }
+    }
+
+    private void crawlAndSaveShareHolder(String symbol) {
+        ShareHolderReqModel shareHolderReqModel = new ShareHolderReqModel();
+        shareHolderReqModel.setSymbol(symbol);
+        shareHolderReqModel.setSize(1000000);
+        shareHolderReqModel.setOffset(1);
+
+        try {
+            ShareHolderResp shareHolderResp = ssiClient.getShareHolder(shareHolderReqModel);
+            shareHolderResp.getData().getShareHolders().getDataList().forEach(item -> saveShareHolderToDb(symbol, item));
+        } catch (Exception e) {
+            log.info("Failed to crawl shareholder --> {} - {}", e.getMessage(), e.getCause());
+        }
+    }
+
+    @Override
+    public void crawlShareHolder() {
+        CompletableFuture.runAsync(() -> {
+            List<SingleStockModel> listSingleStock = ssiClient.getAllStock().getData();
+            listSingleStock.forEach(item -> crawlAndSaveShareHolder(item.getCode()));
         });
     }
 }
