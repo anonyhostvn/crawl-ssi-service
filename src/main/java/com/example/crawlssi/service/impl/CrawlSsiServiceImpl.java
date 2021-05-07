@@ -3,18 +3,12 @@ package com.example.crawlssi.service.impl;
 import com.example.crawlssi.exceptions.CustomBusinessLogicException;
 import com.example.crawlssi.factory.resfact.ResponseStatusEnum;
 import com.example.crawlssi.outgate.ssi.SsiClient;
+import com.example.crawlssi.outgate.ssi.request.CapAndDividendReqModel;
 import com.example.crawlssi.outgate.ssi.request.CompanyProfileReqModel;
 import com.example.crawlssi.outgate.ssi.request.NewsReqModel;
-import com.example.crawlssi.outgate.ssi.response.CompanyProfileResp;
-import com.example.crawlssi.outgate.ssi.response.NewsModel;
-import com.example.crawlssi.outgate.ssi.response.NewsResp;
-import com.example.crawlssi.outgate.ssi.response.SingleStockModel;
-import com.example.crawlssi.repository.CompanyProfileRepository;
-import com.example.crawlssi.repository.NewsRepository;
-import com.example.crawlssi.repository.TradingExchangeRepository;
-import com.example.crawlssi.repository.entity.CompanyProfile;
-import com.example.crawlssi.repository.entity.News;
-import com.example.crawlssi.repository.entity.TradingExchange;
+import com.example.crawlssi.outgate.ssi.response.*;
+import com.example.crawlssi.repository.*;
+import com.example.crawlssi.repository.entity.*;
 import com.example.crawlssi.service.CrawlSsiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -36,18 +30,28 @@ public class CrawlSsiServiceImpl implements CrawlSsiService {
     private final TradingExchangeRepository tradingExchangeRepository;
     private final CompanyProfileRepository companyProfileRepository;
     private final NewsRepository newsRepository;
+    private final CashDividendRepository cashDividendRepository;
+    private final AssetRepository assetRepository;
+    private final CapitalRepository capitalRepository;
+
 
     @Autowired
     public CrawlSsiServiceImpl(
             SsiClient ssiClient,
             TradingExchangeRepository tradingExchangeRepository,
             CompanyProfileRepository companyProfileRepository,
-            NewsRepository newsRepository
+            NewsRepository newsRepository,
+            CashDividendRepository cashDividendRepository,
+            AssetRepository assetRepository,
+            CapitalRepository capitalRepository
     ) {
         this.tradingExchangeRepository = tradingExchangeRepository;
         this.companyProfileRepository = companyProfileRepository;
         this.ssiClient = ssiClient;
         this.newsRepository = newsRepository;
+        this.cashDividendRepository = cashDividendRepository;
+        this.assetRepository = assetRepository;
+        this.capitalRepository = capitalRepository;
     }
 
     private boolean isTradingExExist(String exchangeCode) {
@@ -121,7 +125,7 @@ public class CrawlSsiServiceImpl implements CrawlSsiService {
         News news = new News();
         BeanUtils.copyProperties(newsModel, news);
         if (news.getFullContent().length() > 900)
-            news.setFullContent(news.getFullContent().substring(0,500));
+            news.setFullContent(news.getFullContent().substring(0, 500));
 
         try {
             newsRepository.save(news);
@@ -152,6 +156,66 @@ public class CrawlSsiServiceImpl implements CrawlSsiService {
         CompletableFuture.runAsync(() -> {
             List<SingleStockModel> listSingleStock = ssiClient.getAllStock().getData();
             listSingleStock.forEach(item -> crawlAndSaveNews(item.getCode()));
+        });
+    }
+
+    private void saveDividendToDb(String symbol, CashDividendListModel cashDividendListModel) {
+        CashDividend cashDividend = new CashDividend();
+        BeanUtils.copyProperties(cashDividendListModel, cashDividend);
+        cashDividend.setSymbol(symbol);
+
+        try {
+            cashDividendRepository.save(cashDividend);
+        } catch (Exception e) {
+            log.info("Failed to save cashDividend to Db, --> {} - {} ", e.getMessage(), e.getCause());
+        }
+    }
+
+    private void saveAssetToDb(String symbol, AssetListModel assetListModel) {
+        Asset asset = new Asset();
+        BeanUtils.copyProperties(assetListModel, asset);
+        asset.setSymbol(symbol);
+
+        try {
+            assetRepository.save(asset);
+        } catch (Exception e) {
+            log.info("Failed to save asset to Db --> {} - {}", e.getMessage(), e.getCause());
+        }
+    }
+
+    private void saveOwnerCapital(String symbol, CapitalListModel capitalListModel) {
+        Capital capital = new Capital();
+        BeanUtils.copyProperties(capitalListModel, capital);
+        capital.setSymbol(symbol);
+
+        try {
+            capitalRepository.save(capital);
+        } catch (Exception e) {
+            log.info("Failed to save capital to Db --> {} - {}", e.getMessage(), e.getCause());
+        }
+    }
+
+    private void crawlAndSaveCapAndDividend(String symbol) {
+        CapAndDividendReqModel capAndDividendReqModel = new CapAndDividendReqModel();
+        capAndDividendReqModel.setSymbol(symbol);
+
+        try {
+            CapAndDividendResp capAndDividendResp = ssiClient.getCapAndDividend(capAndDividendReqModel);
+            CapAndDividendDataGroup capAndDividendDataGroup = capAndDividendResp.getData()
+                    .getTabCapitalAndDividend().getCapCashWrapper().getDataGroup();
+            capAndDividendDataGroup.getCashDividendList().forEach(item -> saveDividendToDb(symbol, item));
+            capAndDividendDataGroup.getAssetList().forEach(item -> saveAssetToDb(symbol, item));
+            capAndDividendDataGroup.getOwnerCapitalList().forEach(item -> saveOwnerCapital(symbol, item));
+        } catch (Exception e) {
+            log.info("Failed to crawl capAndDividend {} --> {} - {}", symbol, e.getMessage(), e.getCause());
+        }
+    }
+
+    @Override
+    public void crawlCapAndDividend() {
+        CompletableFuture.runAsync(() -> {
+            List<SingleStockModel> listSingleStock = ssiClient.getAllStock().getData();
+            listSingleStock.forEach(item -> crawlAndSaveCapAndDividend(item.getCode()));
         });
     }
 }

@@ -38,4 +38,9 @@ public interface SsiClient {
             @RequestBody CorporateActionReqModel corporateActionReqModel
     );
 
+    @PostMapping("${url.ssi.endpoint.capanddividend}")
+    CapAndDividendResp getCapAndDividend(
+            @RequestBody CapAndDividendReqModel capAndDividendReqModel
+    );
+
 }

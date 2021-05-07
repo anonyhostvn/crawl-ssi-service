@@ -11,4 +11,6 @@ public interface CrawlSsiService {
 
     void crawlNews();
 
+    void crawlCapAndDividend();
+
 }

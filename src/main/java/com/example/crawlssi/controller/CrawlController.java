@@ -77,4 +77,10 @@ public class CrawlController {
         return ResponseFactory.success();
     }
 
+    @GetMapping("/crawl-capanddividend")
+    public ResponseEntity<GeneralResponse<Object>> crawlCapAndDividend() {
+        crawlSsiService.crawlCapAndDividend();
+        return ResponseFactory.success();
+    }
+
 }
