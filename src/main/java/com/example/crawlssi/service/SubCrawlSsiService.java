@@ -11,4 +11,6 @@ public interface SubCrawlSsiService {
 
     void crawlShareHolder();
 
+    void crawlCorporateAction();
+
 }

@@ -71,4 +71,10 @@ public class CrawlController {
         return ResponseFactory.success();
     }
 
+    @GetMapping("/crawl-corporateaction")
+    public ResponseEntity<GeneralResponse<Object>> crawlCorporateAction() {
+        subCrawlSsiService.crawlCorporateAction();
+        return ResponseFactory.success();
+    }
+
 }
